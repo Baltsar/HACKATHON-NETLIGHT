@@ -4,6 +4,8 @@
 
 Chat answers without sources are cheap. Källan makes NVIDIA Nemotron look things up on the live web with Tavily, read the actual pages, and write a short brief you can check.
 
+The next product cut is an anti-sycophantic first-10-seconds director. Read `HANDOVER.md` and `docs/ARCHITECTURE.md` before changing that path.
+
 ## How it uses Nebius, NVIDIA and Tavily
 
 | Piece | Where | What it does |
