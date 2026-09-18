@@ -2,6 +2,8 @@
 
 Read this file first. Then `docs/ARCHITECTURE.md`.
 Do not invent a video factory. Do not wrap Higgsfield.
+Do not add product OAuth (Higgsfield / YouTube / CapCut / GitHub / Lovable). Execute = copy promptpack.
+OpenCode / Cursor / Codex are *our* harness, not a Källan feature. Next slice is `POST /api/direct`.
 
 ## Product in one line
 
@@ -25,7 +27,7 @@ Truth files (do not fork these in chat):
 
 | Agent | Owns | Does not own |
 |---|---|---|
-| **Codex 5** | `lib/*`, `app/api/*`, schema, confidence, Tavily+Nemotron clients | Visual design, shadcn hunting |
+| **Codex 5** | `src/lib/*`, `src/app/api/*`, schema, confidence, Tavily+Nemotron clients | Visual design, shadcn hunting, product OAuth |
 | **Astra** | System prompt polish, copy, later UX pass | Rewriting lib after Codex shipped it |
 | **Cursor Composer** | Wiring, env, running the first paste→JSON | Architecture arguments |
 | **You** | Taste check, keys, later shadcn premium desk | Asking the model to "make it beautiful" before JSON is real |
@@ -47,18 +49,18 @@ Do not put keys in client components.
 ## Slice order — stop after each green check
 
 ### Slice 1 — contract (Codex)
-- `lib/schema.ts` — DirectorVerdict type from ARCHITECTURE
-- `lib/confidence.ts` — backend overrides model confidence (formula in ARCHITECTURE)
+- `src/lib/schema.ts` — DirectorVerdict type from ARCHITECTURE
+- `src/lib/confidence.ts` — backend overrides model confidence (formula in ARCHITECTURE)
 - `data/fewshots.json` already exists; load it, do not rewrite labels
 Check: `confidence({onlyOneLiner:true}) < 0.45`
 
 ### Slice 2 — clients (Codex)
-- `lib/tavily.ts` — Pass A project extract, Pass B hooks `time_range=month`
-- `lib/nemotron.ts` — Super + JSON schema, Lightning hook rewrite ≤8 words
+- `src/lib/tavily.ts` — Pass A project extract, Pass B hooks `time_range=month`
+- `src/lib/nemotron.ts` — Super + JSON schema, Lightning hook rewrite ≤8 words
 Check: curl one Tavily + one Super call returns parseable JSON
 
 ### Slice 3 — route (Codex)
-- `app/api/direct/route.ts` — intake → tavily → nemotron → confidence overlay → verdict
+- `src/app/api/direct/route.ts` — intake → tavily → nemotron → confidence overlay → verdict
 Check: POST `{artifact:{kind:"url",value:"https://github.com/Baltsar/kallan"}, audience:"hackathon_jury"}` returns grade + missing[] + paths[]
 
 ### Slice 4 — ugly desk (Composer)

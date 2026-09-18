@@ -20,7 +20,7 @@ Källan eats whatever you have, grades the first 10 seconds against a fixed rubr
 | Anti-sycophantic verdict engine | RepoClip / ShowDemo factory |
 | Director: grammar + path + cost | Camera: Higgsfield / Remotion / CapCut |
 | Taste = rubric + Tavily refs + few-shots | Fine-tuned black box |
-| One optional execute button | Smorgasbord of 4 vendors |
+| One copy-promptpack execute | OAuth into Higgsfield / YouTube / CapCut / GitHub / Lovable |
 
 Hackathon track: **Best Apps and Agents**.
 Must show live Token Factory (Nemotron) + Tavily.
@@ -151,15 +151,15 @@ Intake → Normalize → Retrieve → Verdict → Paths
 ```
 
 ```
-[dropzone]        page.tsx
+[dropzone]        src/app/page.tsx
     ↓
-[normalize]       lib/intake.ts
+[normalize]       src/lib/intake.ts
     ↓
-[Tavily A+B]      lib/tavily.ts     // visible rows in UI
+[Tavily A+B]      src/lib/tavily.ts     // visible rows in UI
     ↓
-[Nemotron]        lib/nemotron.ts   // Super classify, Lightning rewrite hook
+[Nemotron]        src/lib/nemotron.ts   // Super classify, Lightning rewrite hook
     ↓
-[Director JSON]   lib/schema.ts
+[Director JSON]   src/lib/schema.ts
     ↓
 [desk]            grade + confidence + worst + avoid + 4 beats + two paths
 ```

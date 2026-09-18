@@ -76,5 +76,7 @@ Codex is already logged in as ChatGPT. PATH: `~/.local/bin/codex` → Codex.app.
 - Keep a runtime Tavily call (search and extract). That is the prize path.
 - Do not add SDKs unless they are required. Plain `fetch` is enough.
 - Do not log API keys or raw extracted page dumps.
+- **In the product:** no OAuth smörgåsbord. Execute is a copy-promptpack button. Do not log the user into Higgsfield, YouTube, CapCut, GitHub, or Lovable from Källan.
+- **In our toolchain:** Cursor / Claude CLI / Codex / optional OpenCode are harnesses. They are not features. Next slice is `POST /api/direct`, not `/connect`.
 - Devpost needs a public GitHub repo, MIT license (already present), README that names Nemotron + Token Factory + Tavily, a demo URL, and a ≤3 min YouTube video. Deadline 30 Oct 2026.
 
