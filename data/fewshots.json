@@ -1,0 +1,77 @@
+[
+  {
+    "id": "hackathon-greeting",
+    "audience": "hackathon_jury",
+    "input": "Hi we are team X we built an AI platform with Next and Nemotron",
+    "grade": "worst",
+    "claim_s": null,
+    "product_truth": 0,
+    "recommended_path": "voice_over_runtime",
+    "why": "Greeting + stack. Elevator belongs in the first seconds. No product surface."
+  },
+  {
+    "id": "hackathon-kallan-dogfood",
+    "audience": "hackathon_jury",
+    "input": "Paste a repo. We tell you if the first 10s will lose. Live classify JSON on screen by 6s.",
+    "grade": "good",
+    "claim_s": 1,
+    "product_truth": 2,
+    "recommended_path": "presence_pip",
+    "why": "Outcome at 0s. Runtime is the surface."
+  },
+  {
+    "id": "hackathon-avatar-agent",
+    "audience": "hackathon_jury",
+    "input": "Higgsfield UGC avatar pretending to use an agent tool",
+    "grade": "worst",
+    "claim_s": null,
+    "product_truth": 0,
+    "recommended_path": "voice_over_runtime",
+    "why": "Snazzy marketing does not help a jury evaluate the app. product_truth 0."
+  },
+  {
+    "id": "yc-application-kinetic",
+    "audience": "yc_application",
+    "input": "Kinetic type promo with music and B-roll",
+    "grade": "worst",
+    "product_truth": 0,
+    "recommended_path": "film_yourself",
+    "why": "YC official: nothing except the founders talking. Generate forbidden."
+  },
+  {
+    "id": "yc-demo-day-number-first",
+    "audience": "yc_demo_day",
+    "input": "We have $40k MRR growing 18 percent week over week.",
+    "grade": "good",
+    "recommended_path": "film_yourself",
+    "why": "Don't bury the lead."
+  },
+  {
+    "id": "yc-demo-day-jargon",
+    "audience": "yc_demo_day",
+    "input": "Hi I am CEO of an AI-based resolver of grocery needs",
+    "grade": "worst",
+    "recommended_path": "film_yourself",
+    "why": "Say we deliver groceries to homes."
+  },
+  {
+    "id": "hackathon-dashboard-tour",
+    "audience": "hackathon_jury",
+    "input": "Login then settings then dashboard tour",
+    "grade": "bad",
+    "claim_s": null,
+    "product_truth": 1,
+    "recommended_path": "voice_over_runtime",
+    "why": "Demo the user outcome, not the chrome."
+  },
+  {
+    "id": "elevenhacks-outcome",
+    "audience": "hackathon_jury",
+    "input": "This app reads your codebase and writes your docs for you.",
+    "grade": "good",
+    "claim_s": 0,
+    "product_truth": 2,
+    "recommended_path": "presence_pip",
+    "why": "Outcome sentence at 0s."
+  }
+]

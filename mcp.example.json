@@ -1,0 +1,7 @@
+{
+  "mcpServers": {
+    "tavily": {
+      "command": "./scripts/tavily-mcp.sh"
+    }
+  }
+}

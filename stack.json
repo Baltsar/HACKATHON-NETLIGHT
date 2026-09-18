@@ -1,0 +1,42 @@
+{
+  "name": "Källan",
+  "purpose": "Sourced live brief. Nemotron plans tools, Tavily searches and extracts, Nemotron writes a cited answer.",
+  "track": "Best Apps and Agents",
+  "hackathon": "Nebius x NVIDIA Global AI Hackathon",
+  "city": "Stockholm",
+  "runtime": {
+    "app": "Next.js 16 App Router",
+    "ui": "React 19 + Tailwind 4",
+    "packageManager": "pnpm",
+    "node": ">=20.9 (nvm 22)"
+  },
+  "inference": {
+    "provider": "Nebius Token Factory",
+    "baseUrl": "https://api.tokenfactory.nebius.com/v1",
+    "protocol": "OpenAI Chat Completions",
+    "model": "nvidia/nemotron-3-super-120b-a12b",
+    "client": "src/lib/nebius.ts"
+  },
+  "tools": {
+    "web_search": "Tavily POST /search",
+    "web_extract": "Tavily POST /extract"
+  },
+  "env": {
+    "file": ".env.local",
+    "required": ["NEBIUS_API_KEY", "TAVILY_API_KEY"],
+    "optional": ["NEBIUS_MODEL", "NEBIUS_BASE_URL"]
+  },
+  "api": {
+    "agent": "POST /api/agent { question: string }",
+    "stack": "GET /api/stack",
+    "health": "GET /api/health",
+    "logs": "GET /api/logs?limit=20"
+  },
+  "logs": "logs/agent.jsonl",
+  "dev": "http://localhost:3456",
+  "entry": {
+    "ui": "src/app/page.tsx",
+    "agent": "src/lib/agent.ts",
+    "tavily": "src/lib/tavily.ts"
+  }
+}

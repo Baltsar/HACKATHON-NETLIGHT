@@ -1,0 +1,36 @@
+@import "tailwindcss";
+
+:root {
+  --paper: oklch(0.96 0.018 88);
+  --ink: oklch(0.24 0.03 48);
+  --ink-soft: oklch(0.42 0.03 48);
+  --rule: oklch(0.82 0.025 75);
+  --stamp: oklch(0.48 0.15 28);
+  --stamp-wash: oklch(0.92 0.04 28);
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-rule: var(--rule);
+  --color-stamp: var(--stamp);
+  --color-stamp-wash: var(--stamp-wash);
+  --font-display: var(--font-display);
+  --font-serif: var(--font-serif);
+  --font-mono: var(--font-mono);
+}
+
+html,
+body {
+  background: var(--paper);
+  color: var(--ink);
+  min-height: 100%;
+}
+
+body {
+  font-family: var(--font-serif), "Times New Roman", serif;
+  background-image:
+    radial-gradient(oklch(0.9 0.03 80 / 0.45) 0.6px, transparent 0.6px);
+  background-size: 18px 18px;
+}
