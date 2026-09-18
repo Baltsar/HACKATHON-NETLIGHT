@@ -1,0 +1,34 @@
+{
+  "hackathon_jury": {
+    "clarity_5s": 0.30,
+    "claim_by_4s": 0.25,
+    "product_truth": 0.25,
+    "mute": 0.15,
+    "grammar": 0.05,
+    "default_path": "presence_pip",
+    "forbid_generate_when": "agent_or_tool"
+  },
+  "yc_application": {
+    "clarity_5s": 0.40,
+    "presence_founders": 1.0,
+    "generate": "forbidden",
+    "kinetic": "forbidden",
+    "default_path": "film_yourself"
+  },
+  "yc_demo_day": {
+    "what_you_do": 0.30,
+    "number_first": 0.30,
+    "slide_legible": 0.20,
+    "no_buried_lead": 0.20,
+    "video_on_slide": "avoid",
+    "default_path": "film_yourself"
+  },
+  "promo_feed": {
+    "mute": 0.30,
+    "grammar": 0.25,
+    "claim_by_4s": 0.20,
+    "product_truth": 0.15,
+    "clarity_5s": 0.10,
+    "default_path": "generate"
+  }
+}
