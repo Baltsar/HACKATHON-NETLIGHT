@@ -1,0 +1,13 @@
+{
+  "time_range": "month",
+  "max_results": 5,
+  "queries": [
+    "{category} app launch OR demo OR Product Hunt",
+    "{category} first seconds hook 2026",
+    "{rival} demo OR launch video"
+  ],
+  "output_fields": ["rivals", "category_cliche", "better_hook", "gap", "idea_upgrade"],
+  "max_rivals": 3,
+  "idea_upgrade_is": "shot fix",
+  "idea_upgrade_is_not": "business pivot"
+}
