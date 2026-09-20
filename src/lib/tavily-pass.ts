@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import { artifactHttpUrl, isGreetingCopy } from "@/lib/intake";
 import type { Artifact, NormalizedBrief, TavilyRow } from "@/lib/schema";
 import { tavilyExtract, tavilySearch } from "@/lib/tavily";
@@ -30,7 +32,7 @@ function githubReadmeRaw(url: string): string | null {
     if (parts.length < 2) {
       return null;
     }
-    return `https://raw.githubusercontent.com/${parts[0]}/${parts[1]}/HEAD/README.md`;
+    return `https://raw.githubusercontent.com/${parts[0]}/${parts[1]}/main/README.md`;
   } catch {
     return null;
   }
@@ -47,6 +49,28 @@ function passAUrls(artifact: Artifact): string[] {
     urls.push(readme);
   }
   return urls.slice(0, 2);
+}
+
+function passBCategory(brief: NormalizedBrief): string {
+  const mechanic = brief.mechanic.trim();
+  if (mechanic && mechanic.includes(" ") && !mechanic.includes("/") && !/^https?:/i.test(mechanic)) {
+    return mechanic;
+  }
+  if (brief.kind === "notes" || brief.kind === "deck_text") {
+    return "hackathon product demo";
+  }
+  return "product demo director first 10 seconds";
+}
+
+function passBQuery(brief: NormalizedBrief): string {
+  try {
+    const file = path.join(process.cwd(), "data/pass-b-queries.json");
+    const spec = JSON.parse(readFileSync(file, "utf8")) as { queries?: string[] };
+    const template = spec.queries?.[0] ?? "{category} app launch OR demo OR Product Hunt";
+    return template.replace("{category}", passBCategory(brief)).replace("{rival}", passBCategory(brief));
+  } catch {
+    return `${passBCategory(brief)} app launch OR demo OR first seconds hook`;
+  }
 }
 
 function extractLooksLikeMechanic(text: string): boolean {
@@ -88,11 +112,7 @@ export async function runTavilyPasses(brief: NormalizedBrief, artifact: Artifact
     artifactExtracted = extractText !== before;
   }
 
-  const hookQuery =
-    brief.mechanic && brief.mechanic.includes(" ") && !brief.mechanic.includes("/")
-      ? `${brief.mechanic} product demo first 10 seconds cold open hook`
-      : "hackathon product demo first 10 seconds cold open outcome-first hook";
-  const search = await tavilySearch(hookQuery, {
+  const search = await tavilySearch(passBQuery(brief), {
     timeRange: "month",
     maxResults: 5,
     searchDepth: "basic",

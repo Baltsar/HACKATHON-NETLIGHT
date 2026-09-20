@@ -7,11 +7,12 @@ OpenCode / Cursor / Codex are *our* harness, not a Källan feature.
 
 ## When you sit down (20 Sep)
 
-1. **Commit + push Slice 2–4** before any agent. Uncommitted: `intake.ts`, `tavily-pass.ts`, `nemotron.ts`, `src/app/api/direct`, ugly desk. Slice 1 is already on remote (`ddcca3a`).
-2. Smoke: `pnpm test` + curl A (greeting → worst, confidence < 0.45) + curl B (Tavily URL in `because[]` / `tavilyRows`).
-3. **Astra** writes `prompts/director.md` only. She does not touch `src/lib`.
-4. **Codex Slice 5** — three fixtures as tests. Wire `prompts/director.md` into Super. Stop if fixture B recommends `generate`.
-5. You taste-check. If the card flatters, the prompt is wrong.
+Slice 2–4 are on `main` (`1f3f1a4`). Next is taste + Slice 5 polish.
+
+1. Smoke curls A/B if the desk feels stale.
+2. **Astra** already has `prompts/director.md` — iterate copy, do not rewrite `src/lib`.
+3. **Codex Slice 5** fixtures are in `src/lib/fixtures.test.ts`. Stop if B recommends `generate`.
+4. You taste-check a one-liner + public URL. If the card flatters, the prompt is wrong.
 
 Do not start ffmpeg, Remotion, Higgsfield API, Lovable, or OAuth.
 

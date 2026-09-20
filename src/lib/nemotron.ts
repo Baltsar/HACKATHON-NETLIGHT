@@ -1,6 +1,9 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import { loadFewshots } from "@/lib/fewshots";
 import { chatCompletion } from "@/lib/nebius";
 import { env } from "@/lib/env";
+import { isCleanHook } from "@/lib/hook";
 import type {
   Because,
   DirectorVerdict,
@@ -235,15 +238,23 @@ function fewshotBlock(): string {
     .join("\n");
 }
 
-const SYSTEM = `You are Källan's director, not a hype machine.
+const FALLBACK_SYSTEM = `You are Källan's director, not a hype machine.
 Grade the first 10 seconds a jury would see. Never flatter a greeting, logo, or stack-flex.
 confidence is computed later by the backend. Do not invent it.
 Cite because[] only from the Tavily rows you were given. Never invent URLs.
 shotlist must be exactly four beats: 0–0.8, 0.8–4, 4–8, 8–10.
-Return exactly two paths: one human camera and generate, unless generate is forbidden for the audience.
-For an agent or tool, do not recommend generate.
-hook_claim ≤ 8 words, outcome first.
-Match the locked few-shot labels.`;
+For an agent or tool, do not recommend generate. For yc_application, recommend film_yourself.
+hook_claim ≤ 8 words, outcome first. Do not invent metrics.`;
+
+export function loadDirectorSystem(): string {
+  try {
+    const file = path.join(process.cwd(), "prompts/director.md");
+    const text = readFileSync(file, "utf8").trim();
+    return text.length > 0 ? text : FALLBACK_SYSTEM;
+  } catch {
+    return FALLBACK_SYSTEM;
+  }
+}
 
 export function fallbackDraft(): DirectorDraft {
   return {
@@ -284,7 +295,7 @@ export async function classifyDirector(input: {
     fewshots: fewshotBlock(),
   });
   const messages = [
-    { role: "system" as const, content: SYSTEM },
+    { role: "system" as const, content: loadDirectorSystem() },
     { role: "user" as const, content: user },
   ];
 
@@ -333,18 +344,10 @@ export function limitWords(text: string, max: number): string {
     .join(" ");
 }
 
-export function isCleanHook(text: string): boolean {
-  const words = text.trim().split(/\s+/).filter(Boolean);
-  if (words.length < 2 || words.length > 8) {
-    return false;
-  }
-  return !/(thinking|analyze|user input|here'?s a|markdown|\*\*|#{1,}|^\d+\.|on schedule|under budget|exceeding all)/i.test(
-    text,
-  );
-}
-
-export async function rewriteHook(claim: string): Promise<string> {
-  const fallback = limitWords(claim, 8) || "Show the outcome first.";
+export async function rewriteHook(claim: string, evidence = ""): Promise<string> {
+  const first = claim.split(/[.!?]/).map((part) => part.trim()).find(Boolean) ?? claim;
+  const fallback = limitWords(first, 8) || "Show the outcome first.";
+  const grounded = `${evidence}\n${claim}`;
   try {
     const completion = await chatCompletion({
       model: env.nebiusFastModel,
@@ -352,7 +355,8 @@ export async function rewriteHook(claim: string): Promise<string> {
       messages: [
         {
           role: "system",
-          content: "Return at most 8 words. Outcome first. No greeting. No stack. No analysis. Hook only. Do not invent metrics.",
+          content:
+            "Return at most 8 words. Outcome first. No greeting. No stack. No analysis. Hook only. Do not invent metrics, percents, or dollar figures that are not in the source.",
         },
         { role: "user", content: fallback },
       ],
@@ -360,11 +364,14 @@ export async function rewriteHook(claim: string): Promise<string> {
       max_tokens: 24,
     });
     const rewritten = limitWords((completion.choices[0]?.message.content ?? "").replace(/^["']|["']$/g, ""), 8);
-    if (isCleanHook(rewritten)) {
+    if (isCleanHook(rewritten, grounded)) {
       return rewritten;
     }
   } catch {
     // Lightning is optional. Never leak reasoning into the verdict.
   }
-  return isCleanHook(fallback) ? fallback : "Show the outcome first.";
+  if (isCleanHook(fallback, grounded)) {
+    return fallback;
+  }
+  return "Show the outcome first.";
 }

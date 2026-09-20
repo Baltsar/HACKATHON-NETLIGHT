@@ -1,85 +1,19 @@
-import { readFileSync } from "node:fs";
-import path from "node:path";
 import { scoreConfidence } from "@/lib/confidence";
-import { normalizeIntake, looksLikeAgentTool } from "@/lib/intake";
+import { looksLikeAgentTool, normalizeIntake } from "@/lib/intake";
 import { logAgentEvent, redactSecrets } from "@/lib/log";
 import { classifyDirector, DEFAULT_SHOTLIST, rewriteHook, type DirectorDraft } from "@/lib/nemotron";
-import { isDirectRequest, type DirectResponse, type PathId, type PathOption, type TavilyRow } from "@/lib/schema";
+import { isDirectRequest, type DirectResponse, type PathId, type TavilyRow } from "@/lib/schema";
 import { runTavilyPasses } from "@/lib/tavily-pass";
+import {
+  humanPath,
+  loadAudienceWeights,
+  overlayGrade,
+  overlayHookType,
+  overlayRecommendedPath,
+  twoPaths,
+} from "@/lib/verdict";
 
 export const maxDuration = 120;
-
-interface AudienceWeight {
-  default_path?: PathId;
-  forbid_generate_when?: string;
-  generate?: string;
-}
-
-function loadAudienceWeights(): Record<string, AudienceWeight> {
-  const file = path.join(process.cwd(), "data/audience-weights.json");
-  return JSON.parse(readFileSync(file, "utf8")) as Record<string, AudienceWeight>;
-}
-
-function humanPath(willAppear: string, fallback: PathId): PathOption {
-  const id: PathId =
-    willAppear === "none" || willAppear === "voice_only"
-      ? "voice_over_runtime"
-      : willAppear === "face"
-        ? fallback === "film_yourself"
-          ? "film_yourself"
-          : "presence_pip"
-        : fallback;
-  if (id === "voice_over_runtime") {
-    return {
-      id,
-      cost: "0 tokens",
-      truth: 2,
-      stack: ["Screen Studio / OBS", "their voice", "Captions"],
-      why: "Jury sees the real runtime. Voice carries the claim without a fake face.",
-    };
-  }
-  if (id === "film_yourself") {
-    return {
-      id,
-      cost: "0 tokens, ~20 min",
-      truth: 2,
-      stack: ["iPhone", "window light", "CapCut"],
-      why: "Founders talking. Nothing else for this audience.",
-    };
-  }
-  return {
-    id: "presence_pip",
-    cost: "0 tokens",
-    truth: 2,
-    stack: ["8s screen", "2s face-in-corner", "CapCut captions"],
-    why: "Hackathon default: live surface first, two seconds of a human who ran it.",
-  };
-}
-
-function generatePath(): PathOption {
-  return {
-    id: "generate",
-    cost: "~60 cr / 15s",
-    truth: 0,
-    stack: ["Higgsfield Marketing Studio", "CapCut"],
-    why: "Only if nobody will shoot and the product is physical / feed.",
-  };
-}
-
-function twoPaths(recommended: PathId, human: PathOption, allowGenerate: boolean): PathOption[] {
-  const generate = generatePath();
-  if (!allowGenerate) {
-    const other: PathOption =
-      human.id === "film_yourself" ? humanPath("none", "voice_over_runtime") : humanPath("face", "film_yourself");
-    const first = recommended === other.id ? other : human;
-    const second = first.id === human.id ? other : human;
-    return [first, second];
-  }
-  if (recommended === "generate") {
-    return [generate, human];
-  }
-  return [human.id === recommended ? human : { ...human, id: recommended }, generate];
-}
 
 function asShotlist(beats: DirectorDraft["shotlist"]): DirectResponse["shotlist"] {
   const filled = DEFAULT_SHOTLIST.map((fallback, index) => beats[index] ?? fallback);
@@ -92,7 +26,7 @@ function mergeBecause(draft: DirectorDraft, rows: TavilyRow[]): DirectResponse["
   const seen = new Set(cited.map((row) => row.url).filter((url): url is string => Boolean(url)));
   const prefer = [
     ...rows.filter((row) => row.pass === "A"),
-    ...rows.filter((row) => row.pass === "B" && /demo|hook|video|jury|pitch|10\s*s/i.test(`${row.title} ${row.quote}`)),
+    ...rows.filter((row) => row.pass === "B" && /demo|hook|video|jury|pitch|10\s*s|launch/i.test(`${row.title} ${row.quote}`)),
     ...rows.filter((row) => row.pass === "B"),
   ];
   for (const row of prefer) {
@@ -142,19 +76,33 @@ export async function POST(request: Request): Promise<Response> {
       ? weights.default_path
       : "presence_pip") as PathId;
     const human = humanPath(intake.brief.will_appear, fallbackHuman);
+    const evidence = `${intake.sourceText}\n${intake.brief.mechanic}\n${passes.extractText}`;
 
-    let recommended: PathId = draft.recommended_path;
-    if (intake.isGreeting) {
-      recommended = "voice_over_runtime";
-    } else if (agentTool && weights.forbid_generate_when === "agent_or_tool") {
-      recommended = human.id;
-    } else if (!allowGenerate && recommended === "generate") {
-      recommended = human.id;
-    }
-
+    const recommended = overlayRecommendedPath({
+      draft: draft.recommended_path,
+      isGreeting: intake.isGreeting,
+      audience: intake.brief.audience,
+      willAppear: intake.brief.will_appear,
+      agentTool,
+      sourceText: intake.sourceText,
+    });
+    const grade = overlayGrade({
+      draft: draft.grade,
+      isGreeting: intake.isGreeting,
+      audience: intake.brief.audience,
+      sourceText: intake.sourceText,
+      outcomeClaim: body.one_liner,
+      hasCutOrTranscript: intake.hasCutOrTranscript,
+    });
+    const hook_type = overlayHookType({
+      draft: draft.hook_type,
+      isGreeting: intake.isGreeting,
+      audience: intake.brief.audience,
+      agentTool,
+    });
     const hook_claim = intake.isGreeting
       ? "Show the outcome, not the stack."
-      : await rewriteHook(draft.hook_claim);
+      : await rewriteHook(body.one_liner?.trim() || draft.hook_claim, evidence);
     const because = mergeBecause(draft, passes.rows);
     const scored = scoreConfidence({
       extractFoundMechanic: passes.extractFoundMechanic,
@@ -171,7 +119,6 @@ export async function POST(request: Request): Promise<Response> {
       paths.reverse();
     }
 
-    const grade = intake.isGreeting ? "worst" : draft.grade;
     const worst = intake.isGreeting
       ? "Greeting + stack in the first seconds. No claim, no product surface."
       : draft.worst;
@@ -189,13 +136,14 @@ export async function POST(request: Request): Promise<Response> {
       worst,
       avoid,
       hook_claim,
-      hook_type: intake.isGreeting ? "outcome_first" : draft.hook_type,
+      hook_type,
       shotlist: asShotlist(grade === "worst" ? DEFAULT_SHOTLIST : draft.shotlist),
       paths: paths.slice(0, 2),
       recommended_path: recommended,
-      why_not_the_other: agentTool
-        ? "Generate is a fake surface. An agent tool needs a live run the jury can distrust."
-        : draft.why_not_the_other,
+      why_not_the_other:
+        agentTool && recommended !== "generate"
+          ? "Generate is a fake surface. An agent tool needs a live run the jury can distrust."
+          : draft.why_not_the_other,
       promptpack,
       tavilyRows: passes.rows,
     };
