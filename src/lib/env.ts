@@ -17,6 +17,9 @@ export const env = {
   get nebiusModel(): string {
     return process.env.NEBIUS_MODEL ?? "nvidia/nemotron-3-super-120b-a12b";
   },
+  get nebiusFastModel(): string {
+    return process.env.NEBIUS_FAST_MODEL ?? "nvidia/Nemotron-3_5-Lightning";
+  },
   get tavilyApiKey(): string {
     return requireEnv("TAVILY_API_KEY");
   },

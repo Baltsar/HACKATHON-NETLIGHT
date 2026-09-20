@@ -35,6 +35,7 @@ export interface DirectRequest {
   artifact: Artifact;
   audience?: Audience;
   one_liner?: string;
+  note?: string;
   will_appear?: WillAppear;
   existing_cut_url?: string;
   stage?: Stage;
@@ -89,6 +90,17 @@ export interface DirectorVerdict {
   promptpack: string;
 }
 
+export interface TavilyRow {
+  pass: "A" | "B";
+  title: string;
+  url: string;
+  quote: string;
+}
+
+export interface DirectResponse extends DirectorVerdict {
+  tavilyRows: TavilyRow[];
+}
+
 const ARTIFACT_KINDS: readonly ArtifactKind[] = [
   "url",
   "repo",
@@ -130,6 +142,12 @@ export function isDirectRequest(value: unknown): value is DirectRequest {
     if (typeof value.audience !== "string" || !AUDIENCES.includes(value.audience as Audience)) {
       return false;
     }
+  }
+  if (value.one_liner !== undefined && typeof value.one_liner !== "string") {
+    return false;
+  }
+  if (value.note !== undefined && typeof value.note !== "string") {
+    return false;
   }
   return true;
 }

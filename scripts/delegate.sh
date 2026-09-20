@@ -83,7 +83,6 @@ case "$WORKER" in
     fi
     exec codex exec \
       -C "$ROOT" \
-      -s workspace-write \
       --approve-for-me \
       --skip-git-repo-check \
       -- "$BOUNDARY" </dev/null

@@ -3,7 +3,17 @@
 Read this file first. Then `docs/ARCHITECTURE.md`.
 Do not invent a video factory. Do not wrap Higgsfield.
 Do not add product OAuth (Higgsfield / YouTube / CapCut / GitHub / Lovable). Execute = copy promptpack.
-OpenCode / Cursor / Codex are *our* harness, not a Källan feature. Next slice is `POST /api/direct`.
+OpenCode / Cursor / Codex are *our* harness, not a Källan feature.
+
+## When you sit down (20 Sep)
+
+1. **Commit + push Slice 2–4** before any agent. Uncommitted: `intake.ts`, `tavily-pass.ts`, `nemotron.ts`, `src/app/api/direct`, ugly desk. Slice 1 is already on remote (`ddcca3a`).
+2. Smoke: `pnpm test` + curl A (greeting → worst, confidence < 0.45) + curl B (Tavily URL in `because[]` / `tavilyRows`).
+3. **Astra** writes `prompts/director.md` only. She does not touch `src/lib`.
+4. **Codex Slice 5** — three fixtures as tests. Wire `prompts/director.md` into Super. Stop if fixture B recommends `generate`.
+5. You taste-check. If the card flatters, the prompt is wrong.
+
+Do not start ffmpeg, Remotion, Higgsfield API, Lovable, or OAuth.
 
 ## Product in one line
 
@@ -78,27 +88,32 @@ Check: B recommending generate = routing bug. Fix before UI.
 ### Not this weekend
 ffmpeg 10s sampler, VL frames, Remotion render, Lovable landing, donate-tokens, LoRA.
 
-## First prompt to paste into Codex 5
+## Prompt for Astra (now)
 
 ```
-Implement Slice 1 and Slice 2 only from HANDOVER.md.
-Read docs/ARCHITECTURE.md and data/fewshots.json first.
-Next.js app router if the repo is empty.
-No UI. No Higgsfield. No video pipeline.
-Do not change few-shot labels.
-Stop when Tavily + Nemotron clients compile and confidence.ts has tests.
+Write prompts/director.md from docs/ARCHITECTURE.md and data/fewshots.json.
+Anti-sycophantic. Kill list from ARCHITECTURE.
+Audience switch: hackathon_jury vs yc_application vs yc_demo_day vs promo_feed.
+Output must match src/lib/schema.ts exactly.
+confidence is computed later — never ask the model for it.
+For agent/tools, never recommend generate.
+Do not edit src/lib. Do not add product features.
 ```
 
-## First prompt to paste into Astra (after Slice 3 is green)
+## Prompt for Codex 5 (after Astra)
 
 ```
-Write director/system.md from docs/ARCHITECTURE.md.
-Anti-sycophantic. Forbidden phrases listed in ARCHITECTURE.
-Audience switch: hackathon_jury vs yc_application vs yc_demo_day.
-Output must match lib/schema.ts exactly.
-Do not add new product features.
+Slice 5 only. Read HANDOVER.md.
+Wire prompts/director.md into src/lib/nemotron.ts.
+Keep confidence.ts overwrite. Do not rewrite tavily.ts or /api/agent.
+Add tests:
+A notes greeting → grade worst, confidence < 0.45
+B talking-heads + audience yc_application → recommended_path ≠ generate
+C one_liner + public URL → recommended_path ≠ generate, hook_type live_trace or outcome_first
+Lightning must not invent numbers absent from extract.
+Stop when pnpm test passes. No UI. No OAuth.
 ```
 
-## Definition of done for tonight
+## Definition of done for this week
 
-Paste a URL. See Tavily rows. Get a hard JSON verdict with confidence < 1. Copy a promptpack. No MP4 required.
+Paste a URL. See Tavily rows. Get a hard JSON verdict with confidence < 1. Copy a promptpack. Three fixtures green. No MP4 required.

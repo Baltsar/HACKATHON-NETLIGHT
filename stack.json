@@ -28,6 +28,7 @@
   },
   "api": {
     "agent": "POST /api/agent { question: string }",
+    "direct": "POST /api/direct { artifact, audience?, one_liner?, note?, will_appear? }",
     "stack": "GET /api/stack",
     "health": "GET /api/health",
     "logs": "GET /api/logs?limit=20"

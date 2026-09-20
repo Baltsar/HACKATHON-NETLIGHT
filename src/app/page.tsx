@@ -12,7 +12,7 @@ export default function Home() {
           Källan
         </h1>
         <p className="mt-4 max-w-xl text-lg leading-snug text-ink-soft">
-          En live brief med källor. Nemotron söker webben, läser sidorna, och skriver bara det som går att peka på.
+          Paste a URL, repo, or notes. We grade whether second 0–4 loses a jury. Confidence is ours, not the model&apos;s.
         </p>
       </header>
       <BriefDesk />
@@ -21,7 +21,7 @@ export default function Home() {
           {stack.runtime.app} · {stack.inference.model} · {stack.tools.web_search} + {stack.tools.web_extract}
         </p>
         <p className="mt-1">
-          GET /api/stack · GET /api/health · GET /api/logs · POST /api/agent
+          GET /api/stack · GET /api/health · GET /api/logs · POST /api/direct · POST /api/agent
         </p>
       </footer>
     </main>
