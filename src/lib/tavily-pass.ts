@@ -62,7 +62,7 @@ function passBCategory(brief: NormalizedBrief): string {
   return "product demo director first 10 seconds";
 }
 
-function passBQuery(brief: NormalizedBrief): string {
+export function passBQuery(brief: NormalizedBrief): string {
   try {
     const file = path.join(process.cwd(), "data/pass-b-queries.json");
     const spec = JSON.parse(readFileSync(file, "utf8")) as { queries?: string[] };
@@ -83,55 +83,71 @@ function extractLooksLikeMechanic(text: string): boolean {
   );
 }
 
-export async function runTavilyPasses(brief: NormalizedBrief, artifact: Artifact): Promise<TavilyPasses> {
+export async function runTavilyPasses(
+  brief: NormalizedBrief,
+  artifact: Artifact,
+  hooks?: {
+    onStatus?: (step: "extract" | "search") => void | Promise<void>;
+    onQuery?: (query: string) => void | Promise<void>;
+    onRow?: (row: TavilyRow) => void | Promise<void>;
+  },
+): Promise<TavilyPasses> {
   const rows: TavilyRow[] = [];
   let extractText = "";
 
-  const pushExtract = (results: Array<{ url: string; raw_content: string }>, title: string) => {
+  const pushExtract = async (results: Array<{ url: string; raw_content: string }>, title: string) => {
     for (const result of results) {
       const body = result.raw_content ?? "";
       if (!body.trim()) {
         continue;
       }
       extractText += `\n${body.slice(0, EXTRACT_CHARS)}`;
-      rows.push({
+      const row: TavilyRow = {
         pass: "A",
         title,
         url: result.url,
         quote: clip(body, QUOTE_CHARS),
-      });
+      };
+      rows.push(row);
+      await hooks?.onRow?.(row);
     }
   };
 
   const urls = passAUrls(artifact);
   let artifactExtracted = false;
+  await hooks?.onStatus?.("extract");
   if (urls.length > 0) {
     const extracted = await tavilyExtract(urls);
     const before = extractText;
-    pushExtract(extracted.results, "extract");
+    await pushExtract(extracted.results, "extract");
     artifactExtracted = extractText !== before;
   }
 
-  const search = await tavilySearch(passBQuery(brief), {
+  const query = passBQuery(brief);
+  await hooks?.onStatus?.("search");
+  await hooks?.onQuery?.(query);
+  const search = await tavilySearch(query, {
     timeRange: "month",
     maxResults: 5,
     searchDepth: "basic",
     excludeDomains: ["facebook.com", "instagram.com", "x.com", "twitter.com", "linkedin.com"],
   });
   for (const result of search.results) {
-    rows.push({
+    const row: TavilyRow = {
       pass: "B",
       title: result.title,
       url: result.url,
       quote: clip(result.content, QUOTE_CHARS),
-    });
+    };
+    rows.push(row);
+    await hooks?.onRow?.(row);
   }
 
   if (!extractText && urls.length > 0 && search.results.length > 0) {
     const follow = search.results.map((result) => result.url).filter((url) => url.startsWith("http")).slice(0, 2);
     if (follow.length > 0) {
       const extracted = await tavilyExtract(follow);
-      pushExtract(extracted.results, "extract");
+      await pushExtract(extracted.results, "extract");
     }
   }
 

@@ -27,3 +27,7 @@ Nemotron Super still writes the verdict prose and the shotlist. Jev can overwrit
 ## If no key
 
 Skip. Rubric + Super JSON + `confidence.ts` is enough. Steal the *question shape* even without the API: never ask "rate this pitch", ask atoms.
+
+## Human eval (Toloka / Tendem)
+
+Nebius AI Builder: $50 Toloka + $50 Tendem, claim by 4 Nov 2026, new users only. Same slot as Jev — optional, not the brain. Use later as a golden set: humans grade seconds 0–4, we compare to Källan when `gissning`. Do not add their login to the product. Do not fine-tune on Token Factory before 30 Oct.

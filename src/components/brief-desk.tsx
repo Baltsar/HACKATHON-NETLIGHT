@@ -1,7 +1,11 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import type { ArtifactKind, Audience, DirectResponse, WillAppear } from "@/lib/schema";
+import type { DirectEvent } from "@/lib/direct-events";
+import type { ArtifactKind, Audience, DirectResponse, TavilyRow, WillAppear } from "@/lib/schema";
+import { AUDIENCE_COPY, KIND_COPY } from "./desk-copy";
+import { LookingAt } from "./looking-at";
+import { VerdictCard } from "./verdict-card";
 
 const KINDS: ArtifactKind[] = ["url", "repo", "notes", "deck_text", "video_url", "transcript"];
 const AUDIENCES: Audience[] = [
@@ -16,7 +20,13 @@ const AUDIENCES: Audience[] = [
 
 type DeskState =
   | { status: "idle" }
-  | { status: "loading" }
+  | {
+      status: "loading";
+      step: string;
+      query?: string;
+      rows: TavilyRow[];
+      chips: string[];
+    }
   | { status: "done"; result: DirectResponse; elapsedMs: number }
   | { status: "error"; message: string };
 
@@ -30,9 +40,45 @@ function isDirectResponse(value: unknown): value is DirectResponse {
   );
 }
 
+function isDirectEvent(value: unknown): value is DirectEvent {
+  return typeof value === "object" && value !== null && "type" in value && typeof value.type === "string";
+}
+
+async function readNdjson(response: Response, onEvent: (event: DirectEvent) => void): Promise<void> {
+  if (!response.body) {
+    throw new Error("Director returned no stream");
+  }
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) {
+      break;
+    }
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop() ?? "";
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed) {
+        continue;
+      }
+      try {
+        const parsed: unknown = JSON.parse(trimmed);
+        if (isDirectEvent(parsed)) {
+          onEvent(parsed);
+        }
+      } catch {
+        // Partial or non-JSON line. Wait for the next chunk.
+      }
+    }
+  }
+}
+
 export function BriefDesk() {
   const [kind, setKind] = useState<ArtifactKind>("url");
-  const [value, setValue] = useState("https://github.com/Baltsar/HACKATHON-NETLIGHT");
+  const [value, setValue] = useState("https://docs.tavily.com");
   const [audience, setAudience] = useState<Audience>("hackathon_jury");
   const [oneLiner, setOneLiner] = useState("");
   const [hideFace, setHideFace] = useState(true);
@@ -42,13 +88,16 @@ export function BriefDesk() {
   async function handleSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
     setCopied(false);
-    setState({ status: "loading" });
+    setState({ status: "loading", step: "extract", rows: [], chips: [] });
     const startedAt = performance.now();
     const will_appear: WillAppear = hideFace ? "none" : "face";
     try {
       const res = await fetch("/api/direct", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/x-ndjson",
+        },
         body: JSON.stringify({
           artifact: { kind, value },
           audience,
@@ -56,6 +105,53 @@ export function BriefDesk() {
           will_appear,
         }),
       });
+      const contentType = res.headers.get("content-type") ?? "";
+      if (contentType.includes("ndjson") && res.body) {
+        let verdict: DirectResponse | null = null;
+        let errorMessage: string | null = null;
+        await readNdjson(res, (directEvent) => {
+          if (directEvent.type === "error") {
+            errorMessage = directEvent.message;
+            return;
+          }
+          if (directEvent.type === "verdict") {
+            verdict = directEvent.result;
+            return;
+          }
+          setState((current) => {
+            if (current.status !== "loading") {
+              return current;
+            }
+            if (directEvent.type === "status") {
+              return { ...current, step: directEvent.step };
+            }
+            if (directEvent.type === "query") {
+              return { ...current, query: directEvent.query };
+            }
+            if (directEvent.type === "hints") {
+              return { ...current, chips: directEvent.chips };
+            }
+            if (directEvent.type === "tavily") {
+              if (current.rows.some((row) => row.url === directEvent.row.url && row.pass === directEvent.row.pass)) {
+                return current;
+              }
+              return { ...current, rows: [...current.rows, directEvent.row] };
+            }
+            return current;
+          });
+        });
+        if (errorMessage) {
+          setState({ status: "error", message: errorMessage });
+          return;
+        }
+        if (!verdict) {
+          setState({ status: "error", message: "Director returned no verdict" });
+          return;
+        }
+        setState({ status: "done", result: verdict, elapsedMs: performance.now() - startedAt });
+        return;
+      }
+
       const data: unknown = await res.json();
       if (!res.ok || !isDirectResponse(data)) {
         const message =
@@ -75,28 +171,47 @@ export function BriefDesk() {
   }
 
   async function copyPromptpack(text: string): Promise<void> {
+    setCopied(true);
     try {
       await navigator.clipboard.writeText(text);
     } catch {
-      // Clipboard can fail when the tab is not focused (automation, some browsers).
+      // Clipboard can fail when the tab is not focused. The promptpack is still on screen.
     }
-    setCopied(true);
   }
 
+  const showRepoHint = kind === "repo" || (kind === "url" && /github\.com/i.test(value));
+
   return (
-    <section className="flex flex-col gap-10 pt-8">
-      <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+    <section className="flex flex-col gap-12 pt-8">
+      {state.status === "done" && (
+        <VerdictCard
+          result={state.result}
+          elapsedMs={state.elapsedMs}
+          copied={copied}
+          onCopy={() => void copyPromptpack(state.result.promptpack)}
+        />
+      )}
+
+      {state.status === "loading" && (
+        <LookingAt step={state.step} query={state.query} rows={state.rows} chips={state.chips} />
+      )}
+
+      {state.status === "error" && (
+        <p className="border border-stamp bg-stamp-wash px-4 py-3 text-sm leading-relaxed text-stamp">{state.message}</p>
+      )}
+
+      <form onSubmit={handleSubmit} className="flex max-w-3xl flex-col gap-6">
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="flex flex-col gap-1 font-mono text-[11px] uppercase tracking-[0.18em] text-ink-soft">
             Artifact
             <select
               value={kind}
               onChange={(event) => setKind(event.target.value as ArtifactKind)}
-              className="border border-rule bg-transparent px-2 py-2 font-serif text-base text-ink"
+              className="min-h-11 cursor-pointer border border-rule bg-transparent px-2 py-2 font-serif text-base text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stamp"
             >
               {KINDS.map((item) => (
                 <option key={item} value={item}>
-                  {item}
+                  {KIND_COPY[item]}
                 </option>
               ))}
             </select>
@@ -106,11 +221,11 @@ export function BriefDesk() {
             <select
               value={audience}
               onChange={(event) => setAudience(event.target.value as Audience)}
-              className="border border-rule bg-transparent px-2 py-2 font-serif text-base text-ink"
+              className="min-h-11 cursor-pointer border border-rule bg-transparent px-2 py-2 font-serif text-base text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stamp"
             >
               {AUDIENCES.map((item) => (
                 <option key={item} value={item}>
-                  {item}
+                  {AUDIENCE_COPY[item]}
                 </option>
               ))}
             </select>
@@ -122,113 +237,41 @@ export function BriefDesk() {
             value={value}
             onChange={(event) => setValue(event.target.value)}
             rows={3}
-            className="w-full resize-none border-0 border-b border-rule bg-transparent pb-3 font-serif text-xl leading-snug text-ink outline-none focus:border-stamp"
+            placeholder="URL, repo, or the words you were going to say"
+            className="w-full resize-none border-0 border-b border-rule bg-transparent pb-3 font-serif text-xl leading-snug text-ink outline-none placeholder:text-rule focus:border-stamp"
           />
         </label>
+        {showRepoHint ? (
+          <p className="font-mono text-[11px] leading-relaxed text-ink-soft">
+            Private GitHub 404s on extract. Make the repo public, or paste the README as notes.
+          </p>
+        ) : null}
         <label className="flex flex-col gap-1 font-mono text-[11px] uppercase tracking-[0.18em] text-ink-soft">
           One-liner (optional)
           <input
             value={oneLiner}
             onChange={(event) => setOneLiner(event.target.value)}
-            className="border-0 border-b border-rule bg-transparent pb-2 font-serif text-base text-ink outline-none focus:border-stamp"
+            placeholder="The outcome in one sentence"
+            className="min-h-11 border-0 border-b border-rule bg-transparent pb-2 font-serif text-base text-ink outline-none placeholder:text-rule focus:border-stamp"
           />
         </label>
-        <label className="flex items-center gap-2 text-sm text-ink">
-          <input type="checkbox" checked={hideFace} onChange={(event) => setHideFace(event.target.checked)} />
+        <label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm text-ink">
+          <input
+            type="checkbox"
+            checked={hideFace}
+            onChange={(event) => setHideFace(event.target.checked)}
+            className="size-4 accent-stamp"
+          />
           I will not appear on camera
         </label>
         <button
           type="submit"
           disabled={state.status === "loading" || value.trim().length === 0}
-          className="mt-1 self-start bg-ink px-5 py-2.5 text-sm font-medium tracking-wide text-paper disabled:opacity-40"
+          className="mt-1 min-h-11 cursor-pointer self-start bg-ink px-5 py-2.5 text-sm font-medium tracking-wide text-paper disabled:cursor-not-allowed disabled:opacity-40"
         >
-          {state.status === "loading" ? "Directing…" : "Grade the first 10s"}
+          {state.status === "loading" ? "Directing…" : state.status === "done" ? "Grade again" : "Grade the first 10s"}
         </button>
       </form>
-
-      {state.status === "loading" && (
-        <p className="font-mono text-xs uppercase tracking-[0.16em] text-stamp">
-          Extract → hook search → Super classify → confidence overwrite
-        </p>
-      )}
-
-      {state.status === "error" && (
-        <p className="border border-stamp bg-stamp-wash px-4 py-3 text-sm leading-relaxed text-stamp">{state.message}</p>
-      )}
-
-      {state.status === "done" && (
-        <article className="flex flex-col gap-8">
-          <header className="border-b border-rule pb-6">
-            <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-stamp">
-              {state.result.grade} · {Math.round(state.result.confidence * 100)}% {state.result.confidence_label} ·{" "}
-              {(state.elapsedMs / 1000).toFixed(1)}s
-            </p>
-            <p className="mt-3 font-display text-4xl leading-none tracking-tight">{state.result.worst}</p>
-            <p className="mt-3 text-lg text-ink-soft">{state.result.avoid}</p>
-            <p className="mt-4 font-mono text-sm">hook: {state.result.hook_claim}</p>
-          </header>
-
-          {state.result.tavilyRows.length > 0 && (
-            <section>
-              <h2 className="font-mono text-[11px] uppercase tracking-[0.18em] text-stamp">Tavily</h2>
-              <ul className="mt-3 flex flex-col gap-2 text-sm">
-                {state.result.tavilyRows.map((row) => (
-                  <li key={`${row.pass}-${row.url}`}>
-                    <span className="font-mono text-[11px] text-ink-soft">{row.pass}</span>{" "}
-                    <a href={row.url} target="_blank" rel="noreferrer" className="underline decoration-rule underline-offset-4">
-                      {row.title || row.url}
-                    </a>
-                    <p className="text-ink-soft">{row.quote}</p>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
-
-          {state.result.missing.length > 0 && (
-            <p className="font-mono text-xs text-ink-soft">missing: {state.result.missing.join(" · ")}</p>
-          )}
-
-          <section>
-            <h2 className="font-mono text-[11px] uppercase tracking-[0.18em] text-stamp">Four beats</h2>
-            <ol className="mt-3 flex flex-col gap-2 text-sm">
-              {state.result.shotlist.map((beat) => (
-                <li key={`${beat.start}-${beat.end}`}>
-                  {beat.start}–{beat.end}s · {beat.action}
-                </li>
-              ))}
-            </ol>
-          </section>
-
-          <section>
-            <h2 className="font-mono text-[11px] uppercase tracking-[0.18em] text-stamp">Two paths</h2>
-            <ul className="mt-3 flex flex-col gap-3 text-sm">
-              {state.result.paths.map((path) => (
-                <li key={path.id} className={path.id === state.result.recommended_path ? "font-medium" : "text-ink-soft"}>
-                  {path.id === state.result.recommended_path ? "recommend" : "other"}: {path.id} · {path.cost} · truth {path.truth} ·{" "}
-                  {path.why}
-                </li>
-              ))}
-            </ul>
-            <p className="mt-2 text-sm text-ink-soft">{state.result.why_not_the_other}</p>
-          </section>
-
-          <section className="border-t border-rule pt-6">
-            <button
-              type="button"
-              onClick={() => copyPromptpack(state.result.promptpack)}
-              className="border border-rule px-3 py-2 text-sm hover:border-stamp"
-            >
-              {copied ? "Copied promptpack" : "Copy promptpack"}
-            </button>
-            {state.result.promptpack ? (
-              <pre className="mt-3 whitespace-pre-wrap font-mono text-xs leading-relaxed text-ink-soft">
-                {state.result.promptpack}
-              </pre>
-            ) : null}
-          </section>
-        </article>
-      )}
     </section>
   );
 }

@@ -28,7 +28,7 @@
   },
   "api": {
     "agent": "POST /api/agent { question: string }",
-    "direct": "POST /api/direct { artifact, audience?, one_liner?, note?, will_appear? }",
+    "direct": "POST /api/direct { artifact, audience?, one_liner?, note?, will_appear? } — JSON, or NDJSON if Accept: application/x-ndjson",
     "stack": "GET /api/stack",
     "health": "GET /api/health",
     "logs": "GET /api/logs?limit=20"

@@ -170,3 +170,23 @@ export function twoPaths(recommended: PathId, human: PathOption, allowGenerate: 
   const lead = human.id === recommended ? human : { ...human, id: recommended };
   return [lead, generate];
 }
+
+export function pasteIntoInstruction(path: PathId): string {
+  if (path === "presence_pip") {
+    return "Paste into CapCut. 8s real screen, 2s face-in-corner. Do not generate a fake UI.";
+  }
+  if (path === "voice_over_runtime") {
+    return "Paste into Screen Studio or OBS, then CapCut captions. Your voice. Do not open Higgsfield.";
+  }
+  if (path === "film_yourself") {
+    return "Shoot on iPhone, window light, then CapCut. Do not generate founders.";
+  }
+  return "Paste into Higgsfield Marketing Studio, then CapCut. Only if nobody will shoot and the product is physical or feed.";
+}
+
+export function withPasteInto(path: PathId, pack: string, hook: string): string {
+  if (/paste into/i.test(pack)) {
+    return pack;
+  }
+  return `${pasteIntoInstruction(path)}\n\nHook: ${hook}\n\n${pack}`;
+}

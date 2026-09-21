@@ -7,14 +7,26 @@ OpenCode / Cursor / Codex are *our* harness, not a Källan feature.
 
 ## When you sit down (20 Sep)
 
-Slice 2–4 are on `main` (`1f3f1a4`). Next is taste + Slice 5 polish.
+Backend + fixtures are on `main`. `prompts/director.md` is written and wired. Desk now has a verdict card (grade vs confidence, 10s ruler, two cameras). Astra may polish copy in the prompt file. Do not let Codex rewrite `src/lib` for UI.
 
-1. Smoke curls A/B if the desk feels stale.
-2. **Astra** already has `prompts/director.md` — iterate copy, do not rewrite `src/lib`.
-3. **Codex Slice 5** fixtures are in `src/lib/fixtures.test.ts`. Stop if B recommends `generate`.
-4. You taste-check a one-liner + public URL. If the card flatters, the prompt is wrong.
+1. Taste-check: public URL. Rows should pop before the verdict. Chips = missing[]. Copy is for the recommended camera, not a Higgsfield login.
+2. **Astra** — iterate `prompts/director.md` only.
+3. Private GitHub still 404s Pass A. Flip the repo public before Devpost (required) and if you want extract of Källan itself.
 
 Do not start ffmpeg, Remotion, Higgsfield API, Lovable, or OAuth.
+
+## Host (Vercel) + password
+
+Demo URL goes on Vercel Hobby (function max 300s; our runs are ~9–32s). Gate: `SITE_PASSWORD` in `.env.local` / Vercel env. `/gate` cookie. `/api/health` stays open. Do not skip the gate on production — Tavily + Super cost real credits.
+
+## Toloka + Tendem ($50 + $50)
+
+Nebius AI Builder credits, claim by **4 Nov 2026**, new users only. Evaluation / golden sets / human fallback when the director is stuck — the work between “it runs” and “it’s ready”. Fine-tune still parked until after 30 Oct.
+
+- **Toloka** — $50, code from the email (do not commit the code).
+- **Tendem** — $50, no code, no expiry on the credit.
+
+Do **not** add Toloka/Tendem login to Källan. Same lock as Higgsfield: no product OAuth. Use them later as an offline golden-set: humans grade 0–4 vs our grade when `confidence_label` is `gissning`. Jev (`docs/JEV.md`) stays the optional typed scorer. Nemotron + Token Factory stay the brain.
 
 ## Product in one line
 
@@ -74,11 +86,11 @@ Check: curl one Tavily + one Super call returns parseable JSON
 - `src/app/api/direct/route.ts` — intake → tavily → nemotron → confidence overlay → verdict
 Check: POST `{artifact:{kind:"url",value:"https://github.com/Baltsar/kallan"}, audience:"hackathon_jury"}` returns grade + missing[] + paths[]
 
-### Slice 4 — ugly desk (Composer)
+### Slice 4 — ugly desk, then readable verdict (Composer)
 - One page. Dropzone + audience select + "I will not appear on camera"
-- Render: Tavily rows, grade, confidence label, worst, avoid, 4 beats, two paths, copy promptpack
+- Verdict card: grade stamp vs confidence meter, worst, avoid | hook, 10s ruler, two cameras, Tavily Pass A/B, copy promptpack
 - shadcn defaults only. No premium blocks yet.
-Check: paste own repo, see a harsh card, not a chat
+Check: a stranger can read why the cut loses without opening the JSON
 
 ### Slice 5 — fixtures (Codex)
 - Fixture A: greeting+stack text → worst

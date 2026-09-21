@@ -1,61 +1,73 @@
 # Källan
 
-> A sourced live brief for people who need the web, not a vibe. Built for the [Nebius x NVIDIA Global AI Hackathon](https://nebiusglobalaihackathon.devpost.com/) at Builders & Brews Stockholm (Sep 18 2026). Repo: [Baltsar/HACKATHON-NETLIGHT](https://github.com/Baltsar/HACKATHON-NETLIGHT) (product name stays **Källan**).
+**Work in progress.** This product is unfinished and will change while it is being built. APIs, grades, copy, and the desk itself are not stable. Do not treat a run as a final verdict.
 
-Chat answers without sources are cheap. Källan makes NVIDIA Nemotron look things up on the live web with Tavily, read the actual pages, and write a short brief you can check.
+A director for the first 10 seconds. Paste a URL, repo, or notes. NVIDIA Nemotron on **Nebius Token Factory** looks at the live web with **Tavily** (search *and* extract), grades whether seconds 0–4 lose a jury, shows its own confidence, and tells you which camera to use. It refuses to flatter a bad cut.
 
-The next product cut is an anti-sycophantic first-10-seconds director. Read `HANDOVER.md` and `docs/ARCHITECTURE.md` before changing that path.
+Built for the [Nebius x NVIDIA Global AI Hackathon](https://nebiusglobalaihackathon.devpost.com/) (Builders & Brews Stockholm, 18 Sep 2026 · Devpost 30 Oct 2026). Track: Best Apps and Agents.
 
-## How it uses Nebius, NVIDIA and Tavily
+Repo: [Baltsar/HACKATHON-NETLIGHT](https://github.com/Baltsar/HACKATHON-NETLIGHT). The product is **Källan**. The GitHub name stays HACKATHON-NETLIGHT.
+
+License: [MIT](./LICENSE).
+
+## Stack (required for this track)
 
 | Piece | Where | What it does |
-|---|---|---|
-| **Nebius Token Factory** | `src/lib/nebius.ts` | All LLM inference runs through the Token Factory OpenAI-compatible API (`https://api.tokenfactory.nebius.com/v1`). |
-| **NVIDIA Nemotron Super** | `NEBIUS_MODEL` (default `nvidia/nemotron-3-super-120b-a12b`) | Plans tool calls, then writes the brief with inline citations. |
-| **Tavily Search** | `web_search` in `src/lib/agent.ts` | Finds current pages. |
-| **Tavily Extract** | `web_extract` in `src/lib/agent.ts` | Pulls full page text so the model is not guessing from snippets. |
+| --- | --- | --- |
+| **Nebius Token Factory** | `src/lib/nebius.ts` | All inference. OpenAI-compatible `https://api.tokenfactory.nebius.com/v1`. |
+| **NVIDIA Nemotron Super** | `nvidia/nemotron-3-super-120b-a12b` | Writes the director JSON. Does *not* set confidence. |
+| **NVIDIA Nemotron Lightning** | `nvidia/Nemotron-3_5-Lightning` | Rewrites the hook to ≤8 words. |
+| **Tavily Search** | `POST /search`, `time_range=month` | Pass B: how this category opened in the last 30 days. |
+| **Tavily Extract** | `POST /extract` | Pass A: the actual page/README, not a snippet guess. |
 
-Request flow: `POST /api/agent` → Nemotron (tools) → Tavily `/search` → Tavily `/extract` → Nemotron → brief + sources.
+Execute is a **copy promptpack** button. There is no OAuth into Higgsfield, YouTube, CapCut, GitHub, or Lovable.
 
-## Run it locally
+## What it does today
 
-Requirements: Node 20.9+ (`.nvmrc` pins 22) and pnpm.
+1. You paste an artifact and pick an audience.
+2. Tavily extract (this project) then Tavily search (category hooks).
+3. Super writes grade, worst, avoid, four beats, two cameras.
+4. The backend overwrites confidence (`dom` / `osäker` / `gissning`).
+5. You copy a promptpack into Screen Studio, CapCut, or Higgsfield *yourself*.
+
+`POST /api/agent` is the Netlight starter brief. The product path is `POST /api/direct`.
+
+## Run locally
+
+Node 22 (`.nvmrc`) and pnpm.
 
 ```bash
 nvm use
 pnpm install
-cp .env.example .env.local   # add NEBIUS_API_KEY and TAVILY_API_KEY
+cp .env.example .env.local   # NEBIUS_API_KEY, TAVILY_API_KEY, SITE_PASSWORD
 pnpm dev
 ```
 
-Open http://localhost:3456 and ask something that needs fresh sources.
-
-The same folder is the source of truth for Cursor, Claude Desktop, and ChatGPT/Codex. Read `AGENTS.md` and `stack.json` first. Every brief is appended to `logs/agent.jsonl` (gitignored). Secrets stay in `.env.local` — never copy them into MCP configs.
+UI: http://localhost:3456 (password page if `SITE_PASSWORD` is set).
 
 ```bash
 curl -s http://localhost:3456/api/health
 curl -s http://localhost:3456/api/stack
-curl -s http://localhost:3456/api/logs
-pnpm ask "What is Nebius Token Factory in one sentence?"
+curl -s http://localhost:3456/api/direct \
+  -H 'content-type: application/json' \
+  -d '{"artifact":{"kind":"notes","value":"Hi we used Next and Nemotron"},"audience":"hackathon_jury"}'
 ```
 
-Claude Desktop can attach Tavily via `scripts/tavily-mcp.sh` (sources `.env.local`). See `mcp.example.json`.
-
-Check which models your key can reach, with context length and pricing:
-
-```bash
-curl -s -H "Authorization: Bearer $NEBIUS_API_KEY" "https://api.tokenfactory.nebius.com/v1/models?verbose=true"
-```
-
-## Environment variables
+Agents working in this folder: read `AGENTS.md`, `HANDOVER.md`, and `stack.json` first. Secrets stay in `.env.local`. Never commit them.
 
 | Name | Required | Default |
-|---|---|---|
+| --- | --- | --- |
 | `NEBIUS_API_KEY` | yes | |
 | `TAVILY_API_KEY` | yes | |
+| `SITE_PASSWORD` | yes on Vercel | omit locally to skip the gate |
 | `NEBIUS_MODEL` | no | `nvidia/nemotron-3-super-120b-a12b` |
+| `NEBIUS_FAST_MODEL` | no | `nvidia/Nemotron-3_5-Lightning` |
 | `NEBIUS_BASE_URL` | no | `https://api.tokenfactory.nebius.com/v1` |
+
+## Not this repo
+
+A video factory. A Higgsfield wrapper. A prompt marketplace. Fine-tunes before 30 Oct.
 
 ## License
 
-[MIT](./LICENSE)
+[MIT](./LICENSE) © 2026 Gustaf Garnow.

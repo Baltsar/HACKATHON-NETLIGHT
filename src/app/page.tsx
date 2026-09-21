@@ -3,8 +3,8 @@ import stack from "../../stack.json";
 
 export default function Home() {
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-5 py-10 sm:py-16">
-      <header className="border-b border-rule pb-8">
+    <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-5 py-10 sm:py-16">
+      <header className="max-w-3xl border-b border-rule pb-8">
         <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-stamp">
           Nemotron · Token Factory · Tavily
         </p>
@@ -12,7 +12,7 @@ export default function Home() {
           Källan
         </h1>
         <p className="mt-4 max-w-xl text-lg leading-snug text-ink-soft">
-          Paste a URL, repo, or notes. We grade whether second 0–4 loses a jury. Confidence is ours, not the model&apos;s.
+          Paste a URL, repo, or notes. Grade and confidence are two numbers. Seconds 0–4 is a ruler, not a chat.
         </p>
       </header>
       <BriefDesk />

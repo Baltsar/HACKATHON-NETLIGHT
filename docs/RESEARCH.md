@@ -119,6 +119,7 @@ Do not write "donate tokens" in the README.
 - Public repo + README that names Nemotron + TF + Tavily
 - Video ≤3 min, audio on, explains the stack
 - Token Factory storage FI→FR 21 Sep 2026 — call the API live, do not cache storage assumptions
+- Toloka $50 + Tendem $50 (Nebius AI Builder, claim by 4 Nov 2026): golden sets / human fallback. Not product OAuth. Fine-tune still after 30 Oct.
 
 ---
 
