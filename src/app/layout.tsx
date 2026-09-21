@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Fraunces, IBM_Plex_Mono, Source_Serif_4 } from "next/font/google";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 import "./globals.css";
 
 const display = Fraunces({
@@ -19,18 +21,20 @@ const mono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Källan — sourced live briefs",
+  title: "Källan — first 10 seconds",
   description:
-    "Ask a question. NVIDIA Nemotron on Nebius Token Factory searches and extracts the live web with Tavily, then writes a cited brief.",
+    "Director for the first 10 seconds. NVIDIA Nemotron on Nebius Token Factory looks with Tavily, then tells an AI builder how to present the product.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="sv"
-      className={`${display.variable} ${serif.variable} ${mono.variable} h-full antialiased`}
+      className={cn("h-full antialiased", display.variable, serif.variable, mono.variable)}
     >
-      <body className="flex min-h-full flex-col">{children}</body>
+      <body className="flex min-h-full flex-col">
+        <TooltipProvider delay={200}>{children}</TooltipProvider>
+      </body>
     </html>
   );
 }

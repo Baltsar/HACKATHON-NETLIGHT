@@ -1,6 +1,7 @@
 import { runDirect, parseDirectBody, wantsDirectStream, type DirectEvent } from "@/lib/direct";
 import { logAgentEvent, redactSecrets } from "@/lib/log";
 
+export const dynamic = "force-dynamic";
 export const maxDuration = 120;
 
 export async function POST(request: Request): Promise<Response> {
@@ -60,6 +61,7 @@ export async function POST(request: Request): Promise<Response> {
       "Content-Type": "application/x-ndjson; charset=utf-8",
       "Cache-Control": "no-cache, no-transform",
       "X-Accel-Buffering": "no",
+      "X-Content-Type-Options": "nosniff",
     },
   });
 }

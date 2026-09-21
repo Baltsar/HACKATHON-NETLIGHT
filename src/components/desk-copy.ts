@@ -75,3 +75,39 @@ export const HOOK_TYPE_COPY: Record<HookType, string> = {
   what_if: "What if",
   live_trace: "Live trace",
 };
+
+export const MODE_COPY = {
+  no_cut: {
+    label: "No film yet",
+    hint: "Paste a URL, repo, or the one-liner. We tell you which camera to shoot.",
+    placeholder: "https://github.com/you/project or the outcome in a sentence",
+  },
+  has_cut: {
+    label: "I have a cut",
+    hint: "Paste the first 10 seconds you say, or a video URL. We grade 0–4 and rewrite the open.",
+    placeholder: "Transcript of seconds 0–10, or a video URL",
+  },
+} as const;
+
+export const STEP_COPY: Record<string, { title: string; doing: string; done: string }> = {
+  extract: {
+    title: "This project",
+    doing: "Extracting the page or README",
+    done: "Read the artifact",
+  },
+  search: {
+    title: "How this category opens",
+    doing: "Searching last-30-days hooks",
+    done: "Got live hook grammar",
+  },
+  classify: {
+    title: "Director",
+    doing: "Super writing grade, hook, two cameras",
+    done: "Verdict drafted",
+  },
+  score: {
+    title: "Confidence",
+    doing: "Overwriting the model’s confidence",
+    done: "Confidence scored here, not by the model",
+  },
+};

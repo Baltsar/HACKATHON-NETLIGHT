@@ -85,6 +85,7 @@ export async function runDirect(
   };
 
   const intake = normalizeIntake(body);
+  await emit({ type: "status", step: "extract" });
   await emit({ type: "hints", chips: earlyChips(intake) });
 
   const passes = await runTavilyPasses(intake.brief, body.artifact, {
