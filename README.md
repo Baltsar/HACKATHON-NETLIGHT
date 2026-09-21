@@ -10,6 +10,10 @@ Repo: [Baltsar/HACKATHON-NETLIGHT](https://github.com/Baltsar/HACKATHON-NETLIGHT
 
 License: [MIT](./LICENSE).
 
+**Live (WIP, password gated):** https://kallan-delta.vercel.app
+
+The password is not in this repo. Pushes to `main` deploy on Vercel.
+
 ## Stack (required for this track)
 
 | Piece | Where | What it does |
